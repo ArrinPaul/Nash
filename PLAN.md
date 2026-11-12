@@ -31,12 +31,29 @@ fixed-odds game would be.
 6. **Rematch** — loop, with the AI's model reset per match (fresh read each time, so it's
    fair to a new player and doesn't feel rigged against a specific person).
 
+## Mascot & voice — Nash
+
+Nash's moods track the match, not just a between-round animation — it should feel like it's
+actually reading the player, reinforcing the adaptive-AI pitch.
+
+- **`reading`** — rounds 1-3 (random-pick warm-up). Lines: "Not enough data yet. Pure guess."
+  / "Flip a coin, basically." — the mascot openly admits it's not adapting yet, which is the
+  honesty that makes the later adaptive rounds land as real.
+- **`locking-pattern`** — round 4+, right before the AI reveals its pick, once it has committed
+  to weighting against a detected tendency. Lines: "I've seen this before." / "Betting
+  against your last move."
+- **`won-round`** / **`lost-round`** — quick per-round reactions. Lines kept short (e.g. "Got
+  you." / "Lucky.") since the real payoff is the post-match summary, not round-by-round banter.
+- **`reviewing`** — on the post-match "here's what I noticed" screen. Lines: "Here's what gave
+  you away." — ties the mascot directly to the concrete pattern summary rather than treating
+  it as a separate UI element.
+
 ## Visual identity (distinct from every other stall project)
 
-- **Mascot: Nash** — a simple geometric rock/paper/scissors glyph set that morphs between
-  the three shapes (a minimal icon, not a cartoon hand), used as the "AI is thinking"
-  animation between rounds. Named after game theory (a plain word choice, not a branded
-  reference), fitting a strategy-game identity.
+- **Mark**: a simple geometric rock/paper/scissors glyph set that morphs between the three
+  shapes (a minimal icon, not a cartoon hand), used as the "AI is thinking" animation between
+  rounds. Named after game theory (a plain word choice, not a branded reference), fitting a
+  strategy-game identity.
 - **Palette**: near-black base with a single hot accent — red (`#c23b3b`-range) for an
   arcade/competitive "fight game" feel, intentionally more aggressive and high-contrast than
   any other project's palette, matching its head-to-head framing.
@@ -98,9 +115,26 @@ using the player's own just-finished match as the worked example:
   visitor across the day.
 - No institutional branding.
 
+## Risks / what a careless build would get wrong
+
+1. **The "what I noticed" summary being generic instead of computed from the real match** —
+   it must be generated from that specific match's actual move history (same function that
+   drives the AI's predictions, run once more for exposition), not a templated sentence
+   swapped in by win/loss outcome.
+2. **The AI silently adapting before round 4** — the `reading` mood's honesty ("not enough
+   data yet") only holds if the implementation genuinely gates the frequency model off until
+   the stated round; a careless build might let it quietly start weighting earlier.
+3. **"Ruthless" and "Fair" sharing a weighting curve** that differs only in a label — the
+   difficulty toggle must change the actual round threshold (or weighting strength), not just
+   change the on-screen text.
+4. **Gesture misdetection being blamed on the player** — if hand-tracking from
+   `computer-vision-kiosk` misreads a gesture, the UI should allow an easy replay of that
+   round rather than scoring a frustrating false loss.
+
 ## Open decisions for the builder
 
 - Exact frequency-model weighting (how many recent moves to track, how strongly to weight
   recency vs overall frequency).
 - Whether gesture detection is shared code with `computer-vision-kiosk` or an independent
   implementation — depends on how that project's codebase is actually structured.
+- Exact round threshold and weighting-strength delta between "Fair" and "Ruthless."
