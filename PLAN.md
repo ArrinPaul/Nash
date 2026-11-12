@@ -94,6 +94,16 @@ using the player's own just-finished match as the worked example:
   evidence that something real is being computed about their kid's behavior in real time —
   a tangible, easy-to-grasp demonstration of adaptive AI, not an abstract claim.
 
+### Parent-at-a-glance (for the parent who never touches the kiosk)
+
+- **On-screen line, always visible on attract**: "This AI starts blind and learns your
+  pattern within a few rounds — the same kind of sequence prediction behind autocomplete and
+  recommendation engines, playing rock-paper-scissors instead." Gives a watching parent the
+  "why is this not just luck" answer before the first round even starts.
+- **Staff talking point**: "Watch the 'what I noticed' screen after the match — it names the
+  actual pattern it found in their play. That's the model's real output, not a scripted
+  roast."
+
 ## Technical approach
 
 - Reuse the gesture-detection approach/model from `computer-vision-kiosk` rather than
