@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@import "@fontsource/fraunces/latin-600.css";
+@import "@fontsource/fraunces/latin-700.css";
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+
+@theme {
+  /* Nash's palette: near-black base, one hot red accent — deliberately more
+     aggressive/high-contrast than real-or-ai-wall's warm "lab notebook"
+     palette, matching a head-to-head "fight game" framing rather than a
+     classifier-game one. */
+  --color-ink: #120f0f;
+  --color-panel: #1d1616;
+  --color-panel-line: #3a2626;
+  --color-paper: #f3ece6;
+  --color-muted: #9c8686;
+  --color-accent: #c23b3b;
+  --color-accent-dim: #8c2929;
+  --color-good: #7f9a5e;
+  --color-good-dim: #27351e;
+  --color-bad: #c23b3b;
+  --color-bad-dim: #3a1c1c;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+    -webkit-touch-callout: none;
+    background-color: var(--color-ink);
+  }
+
+  img {
+    -webkit-user-drag: none;
+    user-drag: none;
+  }
+}
