@@ -58,3 +58,18 @@ export function bestPlayerStreak(outcomes: RoundOutcome[]): number {
   }
   return best;
 }
+
+/** The player's current (trailing) consecutive-win streak as of the end of `outcomes` —
+ * same tie-tolerant rule as bestPlayerStreak, but counting backwards from the latest round
+ * instead of tracking the longest run overall. Drives the in-round "streak building" pulse:
+ * it only needs to know "is the player on a roll right now," not the match's best ever. */
+export function currentPlayerStreak(outcomes: RoundOutcome[]): number {
+  let streak = 0;
+  for (let i = outcomes.length - 1; i >= 0; i--) {
+    const winner = outcomes[i].winner;
+    if (winner === 'player') streak++;
+    else if (winner === 'ai') break;
+    // a trailing tie doesn't break the streak — keep walking backwards past it.
+  }
+  return streak;
+}

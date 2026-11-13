@@ -50,7 +50,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
           onChange={(e) => onNameChange(e.target.value)}
           maxLength={24}
           placeholder="Anonymous"
-          className="bg-panel border border-panel-line text-paper px-3 py-2 font-body outline-none focus:border-accent"
+          className="bg-panel border-2 border-panel-line text-paper px-3 py-2 font-body outline-none focus:border-accent"
         />
       </div>
 
@@ -61,7 +61,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             type="button"
             data-testid={`difficulty-${d}`}
             onClick={() => onDifficultyChange(d)}
-            className={`px-6 py-4 border font-mono text-sm uppercase tracking-wider transition-colors cursor-pointer ${
+            className={`px-6 py-4 border-2 font-mono text-sm uppercase tracking-wider transition-colors cursor-pointer ${
               difficulty === d
                 ? 'bg-accent border-accent text-paper'
                 : 'bg-panel border-panel-line text-muted hover:text-paper'
@@ -78,7 +78,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
         data-testid="begin-match"
         disabled={!difficulty}
         onClick={onStart}
-        className="px-8 py-3 bg-accent text-paper font-mono uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+        className="px-8 py-3 bg-accent text-paper font-mono uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-2 border-accent"
       >
         Begin match
       </button>

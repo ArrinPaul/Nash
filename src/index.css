@@ -1,11 +1,10 @@
 @import "tailwindcss";
-@import "@fontsource/fraunces/latin-600.css";
-@import "@fontsource/fraunces/latin-700.css";
-@import "@fontsource/ibm-plex-sans/latin-400.css";
-@import "@fontsource/ibm-plex-sans/latin-500.css";
-@import "@fontsource/ibm-plex-sans/latin-600.css";
-@import "@fontsource/ibm-plex-mono/latin-400.css";
-@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/bebas-neue/latin-400.css";
+@import "@fontsource/space-grotesk/latin-400.css";
+@import "@fontsource/space-grotesk/latin-500.css";
+@import "@fontsource/space-grotesk/latin-600.css";
+@import "@fontsource/jetbrains-mono/latin-400.css";
+@import "@fontsource/jetbrains-mono/latin-500.css";
 
 @theme {
   /* Nash's palette: near-black base, one hot red accent — deliberately more
@@ -24,9 +23,13 @@
   --color-bad: #c23b3b;
   --color-bad-dim: #3a1c1c;
 
-  --font-display: "Fraunces", Georgia, serif;
-  --font-body: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* Arcade-cabinet type pairing, deliberately not real-or-ai-wall's Fraunces/IBM Plex
+     trio: a tall condensed display face for titles/scores (Bebas Neue reads as a cabinet
+     marquee, not a lab notebook), a clean geometric sans for body copy (Space Grotesk),
+     and a technical mono for HUD numbers/labels (JetBrains Mono). */
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 @layer base {
@@ -45,5 +48,58 @@
   img {
     -webkit-user-drag: none;
     user-drag: none;
+  }
+
+  /* A faint, fixed CRT scanline texture over the whole kiosk — part of the arcade-cabinet
+     identity, not a generic dark-theme look. Non-interactive (pointer-events: none) so it
+     never intercepts a tap, and stripped out entirely when printing the takeaway. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 30;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(243, 236, 230, 0.05) 0px,
+      rgba(243, 236, 230, 0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
+}
+
+@layer components {
+  /* Sharp-cornered HUD panel: a hard-edged block with a bold accent strip across the top,
+     used for the result/explainer content blocks instead of real-or-ai-wall's plain
+     rounded-free-but-soft bordered card. No border-radius anywhere in this app. */
+  .hud-panel {
+    position: relative;
+    border: 2px solid var(--color-panel-line);
+    background: var(--color-panel);
+  }
+
+  .hud-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--color-accent);
+  }
+}
+
+@media print {
+  /* The printable takeaway renders in its own light, ink-cheap layout — see
+     MatchResultScreen's .print-only block — so the CRT texture and dark theme never
+     reach the printer. */
+  body::after {
+    display: none;
+  }
+
+  body {
+    background: #ffffff !important;
   }
 }

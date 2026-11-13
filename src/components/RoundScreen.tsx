@@ -79,7 +79,7 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({ round, difficulty, out
               type="button"
               data-testid={`move-${move}`}
               onClick={() => handlePick(move)}
-              className="flex flex-col items-center gap-2 px-6 py-5 bg-panel border border-panel-line text-paper hover:border-accent transition-colors cursor-pointer"
+              className="flex flex-col items-center gap-2 px-6 py-5 bg-panel border-2 border-panel-line text-paper hover:border-accent transition-colors cursor-pointer"
             >
               <RPSGlyph fixed={move} size={40} />
               <span className="font-mono text-xs uppercase tracking-wider">{MOVE_LABEL[move]}</span>

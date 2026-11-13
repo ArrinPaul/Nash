@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRound, tally, isMatchOver, matchResult, bestPlayerStreak, WINS_NEEDED, MAX_ROUNDS } from './match';
+import { resolveRound, tally, isMatchOver, matchResult, bestPlayerStreak, currentPlayerStreak, WINS_NEEDED, MAX_ROUNDS } from './match';
 import type { RoundOutcome } from '../data/types';
 
 function outcome(winner: RoundOutcome['winner']): RoundOutcome {
@@ -71,5 +71,21 @@ describe('bestPlayerStreak', () => {
   it('a tie does not break a streak', () => {
     const outcomes = [outcome('player'), outcome('tie'), outcome('player')];
     expect(bestPlayerStreak(outcomes)).toBe(2);
+  });
+});
+
+describe('currentPlayerStreak', () => {
+  it('is 0 right after an ai win', () => {
+    expect(currentPlayerStreak([outcome('player'), outcome('ai')])).toBe(0);
+  });
+
+  it('counts only the trailing run, not the longest run overall', () => {
+    const outcomes = [outcome('player'), outcome('player'), outcome('player'), outcome('ai'), outcome('player')];
+    expect(currentPlayerStreak(outcomes)).toBe(1);
+  });
+
+  it('a trailing tie does not break the current streak', () => {
+    const outcomes = [outcome('player'), outcome('player'), outcome('tie')];
+    expect(currentPlayerStreak(outcomes)).toBe(2);
   });
 });

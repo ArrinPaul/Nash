@@ -2,7 +2,7 @@ import { create, type UseBoundStore, type StoreApi } from 'zustand';
 import type { Move, MatchDifficulty, RoundOutcome } from '../data/types';
 import { pickAIMove } from '../game/ai';
 import { resolveRound, isMatchOver, matchResult, bestPlayerStreak } from '../game/match';
-import { addEntry } from '../leaderboard/leaderboard';
+import { addEntry, loadLeaderboard, bestStreakToday } from '../leaderboard/leaderboard';
 
 export type Screen = 'attract' | 'setup' | 'round' | 'reveal' | 'result' | 'explainer';
 
@@ -14,6 +14,10 @@ export interface MatchState {
   history: Move[];
   outcomes: RoundOutcome[];
   lastOutcome: RoundOutcome | null;
+  /** True only when this match's best streak just beat every streak already on today's
+   * leaderboard — drives a bigger celebratory beat on the result screen than an ordinary
+   * match win gets. Computed once, at the moment the match ends, from real leaderboard data. */
+  isNewBestStreak: boolean;
 
   setPlayerName: (name: string) => void;
   goToSetup: () => void;
@@ -36,6 +40,7 @@ const INITIAL = {
   history: [] as Move[],
   outcomes: [] as RoundOutcome[],
   lastOutcome: null as RoundOutcome | null,
+  isNewBestStreak: false,
 };
 
 export function createMatchStore(rng: () => number = Math.random): UseBoundStore<StoreApi<MatchState>> {
@@ -57,6 +62,7 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
         history: [],
         outcomes: [],
         lastOutcome: null,
+        isNewBestStreak: false,
       });
     },
 
@@ -108,6 +114,10 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
       if (isMatchOver(state.outcomes)) {
         const streak = bestPlayerStreak(state.outcomes);
         const result = matchResult(state.outcomes);
+        // Read today's best BEFORE writing this match's entry — a tie with the existing
+        // best doesn't count as a new one, only strictly beating it does.
+        const priorBest = bestStreakToday(loadLeaderboard());
+        const isNewBestStreak = streak > 0 && streak > priorBest;
         addEntry({
           name: state.playerName.trim() || 'Anonymous',
           difficulty: state.difficulty,
@@ -115,7 +125,7 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
           result,
           timestamp: Date.now(),
         });
-        set({ screen: 'result' });
+        set({ screen: 'result', isNewBestStreak });
         return;
       }
 
@@ -136,6 +146,7 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
         history: [],
         outcomes: [],
         lastOutcome: null,
+        isNewBestStreak: false,
       });
     },
 

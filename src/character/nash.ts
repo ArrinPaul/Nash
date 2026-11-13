@@ -57,3 +57,15 @@ export function moodForOutcome(winner: RoundWinner, round: number, difficulty: M
 }
 
 export { ADAPTIVE_FROM_ROUND };
+
+/**
+ * Conversation starters for a parent or staff member who is watching, not playing — turns a
+ * passive observer at the stall into an active participant, per the brief's "ask your kid"
+ * feature. Rotated on the attract screen; each one only works because the match mechanics
+ * behind it are real (the AI genuinely does start blind and switch strategy), not scripted.
+ */
+export const ASK_YOUR_KID_LINES: string[] = [
+  "Ask them: why did the AI start copying its picks after a few rounds?",
+  'Ask them: which move did they play the most — and did they notice?',
+  'Ask them: how would they trick an AI that is watching for patterns?',
+];

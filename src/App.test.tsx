@@ -111,6 +111,39 @@ describe('App', () => {
     expect(screen.getByTestId('insights-list').children.length).toBeGreaterThan(0);
   });
 
+  it('shows a streak-building pulse once the player is 2+ rounds into a win streak', () => {
+    render(<App store={createMatchStore(() => 0)} />);
+    startMatch('fair');
+
+    // Round 1: paper beats the AI's rng=0 random "rock" -> player's 1st win, no pulse yet.
+    fireEvent.click(screen.getByTestId('move-paper'));
+    advancePastThinking();
+    expect(screen.queryByTestId('streak-pulse')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('continue-round'));
+
+    // Round 2: another win -> now 2 in a row, pulse should appear.
+    fireEvent.click(screen.getByTestId('move-paper'));
+    advancePastThinking();
+    expect(screen.getByTestId('streak-pulse')).toHaveTextContent('2 in a row');
+  });
+
+  it('flags a new best streak on the result screen the first time anyone plays today', () => {
+    render(<App store={createMatchStore(() => 0)} />);
+    startMatch('fair');
+
+    let guard = 0;
+    while (!screen.queryByTestId('result-root')) {
+      if (screen.queryByTestId('round-root')) {
+        playRound('paper');
+      }
+      guard++;
+      if (guard > 10) throw new Error('match did not reach the result screen');
+    }
+
+    // First match of the (cleared) day: any real streak is automatically a new best.
+    expect(screen.getByTestId('new-best-streak')).toBeInTheDocument();
+  });
+
   describe('idle timeout', () => {
     it('returns to attract after 45s of no interaction', () => {
       render(<App store={createMatchStore(() => 0)} />);

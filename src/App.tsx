@@ -24,6 +24,7 @@ export const App: React.FC<AppProps> = ({ store = useMatchStore }) => {
     history,
     outcomes,
     lastOutcome,
+    isNewBestStreak,
     setPlayerName,
     goToSetup,
     setDifficulty,
@@ -88,6 +89,7 @@ export const App: React.FC<AppProps> = ({ store = useMatchStore }) => {
           <RevealPanel
             key={`reveal-${lastOutcome.round}`}
             outcome={lastOutcome}
+            outcomes={outcomes}
             difficulty={difficulty}
             playerWins={playerWins}
             aiWins={aiWins}
@@ -103,6 +105,7 @@ export const App: React.FC<AppProps> = ({ store = useMatchStore }) => {
             difficulty={difficulty}
             history={history}
             outcomes={outcomes}
+            isNewBestStreak={isNewBestStreak}
             onRematch={rematch}
             onChangeDifficulty={goToSetup}
             onShowExplainer={showExplainer}

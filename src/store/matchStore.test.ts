@@ -88,6 +88,34 @@ describe('matchStore', () => {
     expect(entries[0].bestStreak).toBe(bestPlayerStreak(finalOutcomes));
   });
 
+  it('flags a new best streak only when it genuinely beats what is already on today\'s leaderboard', () => {
+    function playMatchWithPaper() {
+      let guard = 0;
+      while (store.getState().screen !== 'result') {
+        if (store.getState().screen === 'round') {
+          store.getState().submitMove('paper');
+          store.getState().continue();
+        }
+        guard++;
+        if (guard > 10) throw new Error('match did not conclude');
+      }
+    }
+
+    const store = createMatchStore(() => 0);
+    store.getState().setDifficulty('fair');
+    store.getState().startMatch();
+    playMatchWithPaper();
+    // First entry of the day: any real streak beats the (empty) prior best.
+    expect(store.getState().isNewBestStreak).toBe(true);
+    const firstStreak = store.getState().outcomes.length > 0 ? loadLeaderboard()[0].bestStreak : 0;
+    expect(firstStreak).toBeGreaterThan(0);
+
+    // Identical rematch reproduces the same streak — tying the existing best is not "new".
+    store.getState().rematch();
+    playMatchWithPaper();
+    expect(store.getState().isNewBestStreak).toBe(false);
+  });
+
   it('rematch resets history so the AI model starts blind again', () => {
     const store = createMatchStore(() => 0);
     store.getState().setDifficulty('fair');

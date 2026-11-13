@@ -57,7 +57,7 @@ export const ExplainerScreen: React.FC<ExplainerScreenProps> = ({ difficulty, hi
         </section>
 
         {workedExample && (
-          <section data-testid="worked-example" className="bg-panel border border-panel-line p-4">
+          <section data-testid="worked-example" className="hud-panel p-4 pt-5">
             <h3 className="font-mono text-xs uppercase tracking-widest text-accent mb-1">
               From your match, round {workedExample.round}
             </h3>
@@ -96,7 +96,7 @@ export const ExplainerScreen: React.FC<ExplainerScreenProps> = ({ difficulty, hi
         type="button"
         data-testid="explainer-back"
         onClick={onBack}
-        className="px-6 py-3 bg-accent text-paper font-mono text-xs uppercase tracking-widest cursor-pointer"
+        className="px-6 py-3 bg-accent text-paper font-mono text-xs uppercase tracking-widest cursor-pointer border-2 border-accent"
       >
         Back to results
       </button>

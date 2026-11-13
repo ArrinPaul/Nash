@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { withEntry, topEntries, todaysEntries, type LeaderboardEntry } from './leaderboard';
+import { withEntry, topEntries, todaysEntries, bestStreakToday, type LeaderboardEntry } from './leaderboard';
 
 function entry(name: string, bestStreak: number, timestamp: number): LeaderboardEntry {
   return { name, difficulty: 'fair', bestStreak, result: 'player', timestamp };
@@ -33,5 +33,19 @@ describe('todaysEntries', () => {
     const yesterday = new Date(2026, 10, 12, 23, 0, 0).getTime();
     const entries = [entry('today', 3, sameDay), entry('yesterday', 9, yesterday)];
     expect(todaysEntries(entries, now).map((e) => e.name)).toEqual(['today']);
+  });
+});
+
+describe('bestStreakToday', () => {
+  it('is 0 with no entries', () => {
+    expect(bestStreakToday([])).toBe(0);
+  });
+
+  it('is the max streak among today\'s entries only', () => {
+    const now = new Date(2026, 10, 13, 15, 0, 0).getTime();
+    const sameDay = new Date(2026, 10, 13, 9, 0, 0).getTime();
+    const yesterday = new Date(2026, 10, 12, 23, 0, 0).getTime();
+    const entries = [entry('today-low', 2, sameDay), entry('today-high', 5, sameDay), entry('yesterday-huge', 99, yesterday)];
+    expect(bestStreakToday(entries, now)).toBe(5);
   });
 });

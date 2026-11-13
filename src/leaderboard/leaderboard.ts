@@ -34,6 +34,14 @@ export function todaysEntries(entries: LeaderboardEntry[], now: number = Date.no
   });
 }
 
+/** Pure: the best streak already on today's leaderboard, 0 if nobody's played yet today.
+ * Used to detect a genuine new personal-best-of-the-day, for the bigger celebratory beat
+ * that moment earns (as opposed to an ordinary round or match win). */
+export function bestStreakToday(entries: LeaderboardEntry[], now: number = Date.now()): number {
+  const today = todaysEntries(entries, now);
+  return today.reduce((max, e) => Math.max(max, e.bestStreak), 0);
+}
+
 export function loadLeaderboard(): LeaderboardEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
