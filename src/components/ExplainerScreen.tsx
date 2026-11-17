@@ -40,14 +40,14 @@ export const ExplainerScreen: React.FC<ExplainerScreenProps> = ({ difficulty, hi
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="w-full h-full min-h-screen flex flex-col items-center justify-center gap-6 px-6 py-10 overflow-y-auto"
+      className="w-full min-h-screen flex flex-col gap-8 px-6 sm:px-12 py-20 max-w-3xl mx-auto"
     >
       <NashAvatar mood="reviewing" size={72} />
-      <h2 className="font-display text-3xl text-paper">How the AI is reading you</h2>
+      <h2 className="display text-6xl sm:text-7xl">How Nash reads you</h2>
 
-      <div className="w-full max-w-lg flex flex-col gap-5 font-body text-sm text-muted leading-relaxed">
+      <div className="flex flex-col gap-8 text-lg text-ink/80 leading-relaxed">
         <section>
-          <h3 className="font-mono text-xs uppercase tracking-widest text-accent mb-1">Sequence prediction</h3>
+          <h3 className="display text-3xl text-ink mb-2">Sequence prediction</h3>
           <p>
             Nash isn't guessing randomly after the warm-up. It keeps your last {history.length > 5 ? 5 : history.length || 5}{' '}
             moves and tracks which one you played most — then plays the move that beats that
@@ -57,32 +57,32 @@ export const ExplainerScreen: React.FC<ExplainerScreenProps> = ({ difficulty, hi
         </section>
 
         {workedExample && (
-          <section data-testid="worked-example" className="hud-panel p-4 pt-5">
-            <h3 className="font-mono text-xs uppercase tracking-widest text-accent mb-1">
+          <section data-testid="worked-example" className="bg-sheet text-ink rounded-[1.75rem] p-6">
+            <h3 className="display text-3xl text-ink mb-2">
               From your match, round {workedExample.round}
             </h3>
             <p>
-              Nash predicted you'd play <strong className="text-paper">{MOVE_LABEL[workedExample.predicted]}</strong>{' '}
-              next, so it played <strong className="text-paper">{MOVE_LABEL[workedExample.aiMove]}</strong> to beat
+              Nash predicted you'd play <strong className="text-ink">{MOVE_LABEL[workedExample.predicted]}</strong>{' '}
+              next, so it played <strong className="text-ink">{MOVE_LABEL[workedExample.aiMove]}</strong> to beat
               it. You actually played{' '}
-              <strong className="text-paper">{MOVE_LABEL[workedExample.actual]}</strong> — the prediction was{' '}
+              <strong className="text-ink">{MOVE_LABEL[workedExample.actual]}</strong> — the prediction was{' '}
               {workedExample.correct ? 'right' : 'wrong'} that time.
             </p>
           </section>
         )}
 
         <section>
-          <h3 className="font-mono text-xs uppercase tracking-widest text-accent mb-1">Why it struggles early</h3>
+          <h3 className="display text-3xl text-ink mb-2">Why it struggles early</h3>
           <p>
             For the first {threshold - 1} round{threshold - 1 === 1 ? '' : 's'} on this difficulty, Nash has no
-            history to work from — that's the <strong className="text-paper">cold-start problem</strong>: a
+            history to work from — that's the <strong className="text-ink">cold-start problem</strong>: a
             model can't find a pattern in data that doesn't exist yet. Nash plays those rounds
             randomly and says so, instead of pretending to already understand you.
           </p>
         </section>
 
         <section>
-          <h3 className="font-mono text-xs uppercase tracking-widest text-accent mb-1">How to beat it</h3>
+          <h3 className="display text-3xl text-ink mb-2">How to beat it</h3>
           <p>
             Play less predictably — closer to a genuine 1-in-3 split between rock, paper, and
             scissors, and avoid repeating yourself right after a loss. A frequency model has
@@ -96,7 +96,7 @@ export const ExplainerScreen: React.FC<ExplainerScreenProps> = ({ difficulty, hi
         type="button"
         data-testid="explainer-back"
         onClick={onBack}
-        className="px-6 py-3 bg-accent text-paper font-mono text-xs uppercase tracking-widest cursor-pointer border-2 border-accent"
+        className="btn btn-solid self-start"
       >
         Back to results
       </button>
