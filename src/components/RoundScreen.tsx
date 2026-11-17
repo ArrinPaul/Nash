@@ -11,8 +11,8 @@ import { MOVE_TILE, MOVE_LABEL, tileStyle } from './moveTheme';
 import { currentPlayerStreak, tally, winsNeededForLength } from '../game/match';
 import { randomMove } from '../game/ai';
 import { MindReaderGauge } from './MindReaderGauge';
-import { WebcamGestureInput } from './WebcamGestureInput';
-import { preloadHandTracker, getCameraPreference, setCameraPreference } from '../camera/handTracker';
+import { preloadHandTracker } from '../camera/handTracker';
+import { useCameraStore } from '../camera/cameraStore';
 import { playRockSound, playPaperSound, playScissorsSound, playNashVoice, playSelectSound } from '../audio/sound';
 
 interface RoundScreenProps {
@@ -45,11 +45,6 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
   archetype = 'nash',
 }) => {
   const [thinking, setThinking] = useState(false);
-  const [showCamera, setShowCameraState] = useState(getCameraPreference);
-  const setShowCamera = (on: boolean) => {
-    setCameraPreference(on);
-    setShowCameraState(on);
-  };
   const [picked, setPicked] = useState<Move | null>(null);
   const [beat, setBeat] = useState(0); // 0..3 = counting in, 4 = shoot window open
   const [tooSlow, setTooSlow] = useState(false);
@@ -94,6 +89,25 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
       onSubmitMove(move);
     }, THINKING_MS);
   };
+
+  // Camera mode is app-level and always live alongside the tiles and keys: this round only
+  // registers its throw handler and says when SHOOT is open.
+  const handlePickRef = useRef(handlePick);
+  handlePickRef.current = handlePick;
+  const camEnabled = useCameraStore((c) => c.enabled);
+  const setCamEnabled = useCameraStore((c) => c.setEnabled);
+  const setCamArmed = useCameraStore((c) => c.setArmed);
+  const registerThrow = useCameraStore((c) => c.register);
+  useEffect(() => {
+    registerThrow((move) => handlePickRef.current(move));
+    return () => {
+      registerThrow(null);
+      setCamArmed(false);
+    };
+  }, [registerThrow, setCamArmed]);
+  useEffect(() => {
+    setCamArmed(beat >= BEATS.length && !thinking);
+  }, [beat, thinking, setCamArmed]);
 
   // Shot clock: once SHOOT is up, a pick must land in time or a random move is thrown for you.
   useEffect(() => {
@@ -247,24 +261,16 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
             <button
               type="button"
               data-testid="camera-toggle"
-              aria-pressed={showCamera}
-              onClick={() => setShowCamera(!showCamera)}
+              aria-pressed={camEnabled}
+              onClick={() => setCamEnabled(!camEnabled)}
               className="self-center text-sm font-semibold text-mute hover:text-ink underline underline-offset-4 cursor-pointer"
             >
-              {showCamera ? 'Camera mode on — show your hand on Shoot!' : 'Play with your hand (camera)'}
+              {camEnabled ? 'Hand or tiles — both work. Turn camera off' : 'Turn camera on to play with your hand'}
             </button>
           </>
         )}
       </div>
 
-      {showCamera && (
-        <WebcamGestureInput
-          armed={shooting && !thinking}
-          onThrow={(move) => handlePick(move)}
-          onManualPick={(move) => handlePick(move)}
-          onClose={() => setShowCamera(false)}
-        />
-      )}
     </motion.div>
   );
 };

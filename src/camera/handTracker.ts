@@ -48,12 +48,13 @@ export function preloadHandTracker(): void {
 
 const PREF_KEY = 'nash-camera-mode';
 
-/** Whether the player turned camera mode on; it stays on from round to round. */
+/** Camera mode defaults to on and stays on from round to round. */
 export function getCameraPreference(): boolean {
   try {
-    return sessionStorage.getItem(PREF_KEY) === '1';
+    // On unless the player turned it off this session.
+    return sessionStorage.getItem(PREF_KEY) !== '0';
   } catch {
-    return false;
+    return true;
   }
 }
 

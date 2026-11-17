@@ -10,6 +10,8 @@ import { RoundScreen } from './components/RoundScreen';
 import { RevealPanel } from './components/RevealPanel';
 import { MatchResultScreen } from './components/MatchResultScreen';
 import { ExplainerScreen } from './components/ExplainerScreen';
+import { WebcamGestureInput } from './components/WebcamGestureInput';
+import { useCameraStore } from './camera/cameraStore';
 import { MultiplayerRoundScreen } from './components/MultiplayerRoundScreen';
 import { isSoundEnabled, toggleSound, playMatchVictorySound } from './audio/sound';
 import confetti from 'canvas-confetti';
@@ -53,6 +55,12 @@ export const App: React.FC<AppProps> = ({ store = useMatchStore }) => {
   } = store();
 
   const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const camEnabled = useCameraStore((c) => c.enabled);
+  const camArmed = useCameraStore((c) => c.armed);
+  const setCamEnabled = useCameraStore((c) => c.setEnabled);
+  const throwViaCamera = useCameraStore((c) => c.throwMove);
+  // One panel for the whole solo match so the camera starts once and stays on.
+  const cameraLive = camEnabled && mode !== 'multiplayer' && (screen === 'round' || screen === 'reveal');
 
   // F = fullscreen, M = mute (ignored while typing in a field).
   useEffect(() => {
@@ -237,6 +245,13 @@ export const App: React.FC<AppProps> = ({ store = useMatchStore }) => {
           />
         )}
       </AnimatePresence>
+      {cameraLive && (
+        <WebcamGestureInput
+          armed={camArmed}
+          onThrow={(move) => throwViaCamera?.(move)}
+          onClose={() => setCamEnabled(false)}
+        />
+      )}
     </main>
   );
 };

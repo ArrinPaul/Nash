@@ -11,8 +11,6 @@ interface WebcamGestureInputProps {
   /** Called once with the gesture that was held long enough. */
   onThrow: (move: Move) => void;
   onClose: () => void;
-  /** Manual fallback, only offered when tracking is unavailable. */
-  onManualPick?: (move: Move) => void;
 }
 
 type Tracking = 'permission' | 'loading' | 'tracking' | 'manual';
@@ -24,7 +22,7 @@ export const HOLD_MS = 450;
  * Camera mode: a small live panel in the corner. The hand is read continuously; once SHOOT
  * is up and the same pose has been held for HOLD_MS it is thrown automatically. No button.
  */
-export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, onThrow, onClose, onManualPick }) => {
+export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, onThrow, onClose }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const armedRef = useRef(armed);
   const onThrowRef = useRef(onThrow);
@@ -80,6 +78,7 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, o
         let held: Move | null = null;
         let heldSince = 0;
         let fired = false;
+        let wasArmed = false;
         let lastPct = 0;
 
         const loop = () => {
@@ -96,6 +95,13 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, o
               // A visible hand means someone is playing: keep the kiosk from idling out.
               if (stable) window.dispatchEvent(new Event(ACTIVITY_EVENT));
             }
+
+            // Each new SHOOT window starts fresh: the pose must be held after it opens.
+            if (armedRef.current && !wasArmed) {
+              fired = false;
+              heldSince = performance.now();
+            }
+            wasArmed = armedRef.current;
 
             // Auto-capture: armed + same pose held long enough => throw it, exactly once.
             let pct = 0;
@@ -135,7 +141,7 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, o
       : tracking === 'loading'
         ? 'Loading hand tracking…'
         : tracking === 'manual'
-          ? 'Tracking is off'
+          ? 'Camera off — use the tiles or R P S'
           : !armed
             ? live
               ? `${MOVE_LABEL[live]} — wait for Shoot!`
@@ -146,7 +152,7 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, o
 
   return (
     <aside
-      className="fixed z-40 bottom-4 right-4 w-56 sm:w-64 rounded-[1.5rem] bg-ink text-bone p-2 shadow-[0_10px_30px_rgba(21,18,14,0.35)]"
+      className="fixed z-40 bottom-3 right-4 w-56 sm:w-64 rounded-[1.5rem] bg-ink text-bone p-2 shadow-[0_10px_30px_rgba(21,18,14,0.35)]"
       aria-label="Camera mode"
       data-testid="camera-panel"
     >
@@ -179,20 +185,6 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, o
         {status}
       </p>
 
-      {tracking === 'manual' && onManualPick && (
-        <div className="grid grid-cols-3 gap-1.5 px-1 pb-1">
-          {(['rock', 'paper', 'scissors'] as Move[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => onManualPick(m)}
-              className="rounded-xl border-2 border-bone/40 py-1.5 text-xs font-semibold cursor-pointer"
-            >
-              {MOVE_LABEL[m]}
-            </button>
-          ))}
-        </div>
-      )}
     </aside>
   );
 };
