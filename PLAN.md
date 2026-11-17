@@ -1,4 +1,4 @@
-# Rock-Paper-Scissors vs AI — "Nash" — Design & Implementation Plan
+# Nash — Rock-Paper-Scissors vs AI — Design & Implementation Plan
 
 > Companion stall project to `real-or-ai-wall`, reusing the gesture-recognition stack from
 > `computer-vision-kiosk` (same hand-landmark detection) wired into a new, self-contained

@@ -7,7 +7,7 @@
 // Same hand-written pattern as real-or-ai-wall/public/sw.js: vite-plugin-pwa's
 // build-time generateSW step is blocked by a Windows Application Control
 // policy on the stall laptops, so this is written directly instead.
-const CACHE_NAME = 'rps-vs-ai-v1';
+const CACHE_NAME = 'nash-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

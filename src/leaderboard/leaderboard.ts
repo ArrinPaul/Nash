@@ -8,7 +8,7 @@ export interface LeaderboardEntry {
   timestamp: number;
 }
 
-const STORAGE_KEY = 'rps-vs-ai:leaderboard';
+const STORAGE_KEY = 'nash:leaderboard';
 const MAX_ENTRIES = 50;
 
 /** Pure: inserts an entry, re-sorts by best streak (desc), and caps the list. */

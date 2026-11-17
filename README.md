@@ -16,7 +16,7 @@ _Play best-of-3, 7 or 11 against Nash, or go head to head with a friend. Throw w
 ![Vitest](https://img.shields.io/badge/Vitest-5-6E9F18?logo=vitest&logoColor=white)
 ![Offline First](https://img.shields.io/badge/Offline-100%25_Local-brightgreen)
 
-[Quickstart](#quickstart) · [Features](#features) · [How Nash Thinks](#how-nash-thinks) · [Architecture](#architecture) · [Offline & Kiosk Mode](#offline--kiosk-mode) · [Testing](#testing) · [Report an issue](https://github.com/ArrinPaul/rps-vs-ai/issues)
+[Quickstart](#quickstart) · [Features](#features) · [How Nash Thinks](#how-nash-thinks) · [Architecture](#architecture) · [Offline & Kiosk Mode](#offline--kiosk-mode) · [Testing](#testing) · [Report an issue](https://github.com/ArrinPaul/Nash/issues)
 
 </div>
 
@@ -128,8 +128,8 @@ Core game logic (`src/game/ai.ts`, `match.ts`, `insights.ts`, `gesture.ts`) is p
 ## Quickstart
 
 ```bash
-git clone https://github.com/ArrinPaul/rps-vs-ai.git
-cd rps-vs-ai
+git clone https://github.com/ArrinPaul/Nash.git
+cd Nash
 npm install
 npm run dev
 ```
@@ -178,7 +178,7 @@ No internet is needed. If `npm` is not available on the target machine, copy `di
 
 ## Leaderboard
 
-Each completed match records its best win-streak in `localStorage` (key `rps-vs-ai:leaderboard`) on that laptop only. The top 5 show on the match-result screen. It resets only if the browser's site data for the app is cleared.
+Each completed match records its best win-streak in `localStorage` (key `nash:leaderboard`) on that laptop only. The top 5 show on the match-result screen. It resets only if the browser's site data for the app is cleared.
 
 ---
 
