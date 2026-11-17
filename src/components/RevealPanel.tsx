@@ -61,6 +61,9 @@ const Cracks: React.FC = () => (
   </motion.svg>
 );
 
+/** The reveal moves on by itself; Space, Enter or the button skips the wait. */
+export const AUTO_CONTINUE_MS = 2500;
+
 export const RevealPanel: React.FC<RevealPanelProps> = ({
   outcome,
   outcomes,
@@ -100,6 +103,11 @@ export const RevealPanel: React.FC<RevealPanelProps> = ({
       // Vibration is a nicety; never let it break the reveal.
     }
   }, [outcome.winner, streak]);
+
+  useEffect(() => {
+    const id = setTimeout(onContinue, AUTO_CONTINUE_MS);
+    return () => clearTimeout(id);
+  }, [onContinue]);
 
   // Keyboard: Space / Enter = continue
   useEffect(() => {
@@ -212,8 +220,22 @@ export const RevealPanel: React.FC<RevealPanelProps> = ({
       </div>
 
       <div className="mt-auto flex justify-center">
-        <button type="button" data-testid="continue-round" onClick={onContinue} className="btn btn-solid text-lg min-h-14 px-12">
-          Continue <span className="kbd">Space</span>
+        <button
+          type="button"
+          data-testid="continue-round"
+          onClick={onContinue}
+          className="btn btn-solid text-lg min-h-14 px-12 relative overflow-hidden"
+        >
+          <motion.span
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 bg-bone/20"
+            initial={{ width: '0%' }}
+            animate={{ width: '100%' }}
+            transition={{ duration: AUTO_CONTINUE_MS / 1000, ease: 'linear' }}
+          />
+          <span className="relative">
+            Next round <span className="kbd">Space</span>
+          </span>
         </button>
       </div>
     </motion.div>

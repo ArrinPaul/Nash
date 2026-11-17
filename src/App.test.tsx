@@ -207,3 +207,30 @@ describe('hands-free activity', () => {
     expect(screen.queryByTestId('attract-root')).not.toBeInTheDocument();
   });
 });
+
+describe('auto continue', () => {
+  it('moves on from the reveal by itself within 3 seconds, no click needed', () => {
+    const store = createMatchStore(() => 0);
+    render(<App store={store} />);
+    startMatch('fair');
+    fireEvent.click(screen.getByTestId('move-rock'));
+    advancePastThinking();
+    expect(screen.getByTestId('reveal-root')).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(2900);
+    });
+    // Reveal is gone: the next round (or the result) has taken over.
+    expect(screen.queryByTestId('reveal-root')).not.toBeInTheDocument();
+    expect(store.getState().round).toBe(2);
+  });
+
+  it('still lets the player skip the wait with the button', () => {
+    const store = createMatchStore(() => 0);
+    render(<App store={store} />);
+    startMatch('fair');
+    fireEvent.click(screen.getByTestId('move-rock'));
+    advancePastThinking();
+    fireEvent.click(screen.getByTestId('continue-round'));
+    expect(store.getState().round).toBe(2);
+  });
+});
