@@ -12,6 +12,7 @@ import { currentPlayerStreak, tally, winsNeededForLength } from '../game/match';
 import { randomMove } from '../game/ai';
 import { MindReaderGauge } from './MindReaderGauge';
 import { WebcamGestureInput } from './WebcamGestureInput';
+import { preloadHandTracker } from '../camera/handTracker';
 import { playRockSound, playPaperSound, playScissorsSound, playNashVoice, playSelectSound } from '../audio/sound';
 
 interface RoundScreenProps {
@@ -52,6 +53,11 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
   const [line] = useState(() => pickLine(moodForRound(round, difficulty, matchLength)));
 
   const playerHistory = history || outcomes.map((o) => o.playerMove);
+
+  // Warm up hand tracking so the camera opens ready instead of loading for seconds.
+  useEffect(() => {
+    preloadHandTracker();
+  }, []);
 
   useEffect(() => {
     playNashVoice();
