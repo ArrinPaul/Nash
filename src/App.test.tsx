@@ -15,12 +15,14 @@ afterEach(() => {
 /** Advances past RoundScreen's "Nash is picking..." delay so the pick actually submits. */
 function advancePastThinking() {
   act(() => {
-    vi.advanceTimersByTime(700);
+    vi.advanceTimersByTime(400);
   });
 }
 
 function startMatch(difficulty: 'fair' | 'ruthless' = 'fair') {
   fireEvent.click(screen.getByTestId('attract-root'));
+  fireEvent.click(screen.getByTestId('setup-continue')); // name
+  fireEvent.click(screen.getByTestId('setup-continue')); // game
   fireEvent.click(screen.getByTestId(`difficulty-${difficulty}`));
   fireEvent.click(screen.getByTestId('begin-match'));
 }
@@ -63,13 +65,14 @@ describe('App', () => {
     expect(screen.getByTestId('round-winner')).toBeInTheDocument();
   });
 
-  it('"Redo this pick" discards the round and returns to the same round for a re-pick', () => {
+  it('offers no way to change a pick after the reveal', () => {
     render(<App store={createMatchStore(() => 0)} />);
     startMatch('fair');
     fireEvent.click(screen.getByTestId('move-rock'));
     advancePastThinking();
-    fireEvent.click(screen.getByTestId('undo-round'));
-    expect(screen.getByTestId('round-root')).toHaveAttribute('data-round', '1');
+    expect(screen.queryByTestId('undo-round')).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'u' });
+    expect(screen.getByTestId('reveal-root')).toBeInTheDocument();
   });
 
   it("Nash's mood actually differs between the reading warm-up and the locking-pattern phase", () => {
@@ -153,5 +156,37 @@ describe('App', () => {
       });
       expect(screen.getByTestId('attract-root')).toBeInTheDocument();
     });
+  });
+});
+
+describe('shot clock', () => {
+  it('throws a random move for you if you stall after SHOOT', () => {
+    const store = createMatchStore(() => 0);
+    render(<App store={store} />);
+    startMatch('fair');
+    expect(store.getState().history).toHaveLength(0);
+    // Effects chain beat-by-beat, so tick in small steps and let React flush between them.
+    for (let i = 0; i < 70; i++) {
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+    }
+    expect(store.getState().history).toHaveLength(1);
+    expect(screen.getByTestId('reveal-root')).toBeInTheDocument();
+  });
+});
+
+describe('setup wizard', () => {
+  it('walks name, game, difficulty in order and only then begins', () => {
+    render(<App store={createMatchStore(() => 0)} />);
+    fireEvent.click(screen.getByTestId('attract-root'));
+    expect(screen.getByTestId('setup-root')).toHaveAttribute('data-step', 'name');
+    fireEvent.click(screen.getByTestId('setup-continue'));
+    expect(screen.getByTestId('setup-root')).toHaveAttribute('data-step', 'game');
+    fireEvent.click(screen.getByTestId('setup-continue'));
+    expect(screen.getByTestId('setup-root')).toHaveAttribute('data-step', 'difficulty');
+    expect(screen.getByTestId('begin-match')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('difficulty-fair'));
+    expect(screen.getByTestId('begin-match')).toBeEnabled();
   });
 });
