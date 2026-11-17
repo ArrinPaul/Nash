@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo-mark.svg" alt="Nash logo" width="120" />
+
 # Nash
 
 ### Rock Paper Scissors against an AI that actually learns you, a web game with hand-gesture input that runs fully offline

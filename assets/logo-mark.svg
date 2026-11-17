@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Nash logo">
+  <rect width="512" height="512" rx="112" fill="#15120e"/>
+  <polygon points="124,112 206,120 202,400 128,392" fill="#f4d24a"/>
+  <polygon points="306,112 388,120 384,400 310,392" fill="#5a6bff"/>
+  <polygon points="124,112 206,120 388,400 306,392" fill="#f2603a" stroke="#15120e" stroke-width="14" stroke-linejoin="round"/>
+</svg>
