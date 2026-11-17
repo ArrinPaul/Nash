@@ -3,31 +3,74 @@ import type { Move } from '../data/types';
 import { MOVES } from '../data/types';
 
 /**
- * A minimal geometric rock/paper/scissors glyph set that morphs between the three shapes —
- * the "AI is thinking" mark between a player's pick and the reveal (PLAN.md "Mark"), and
- * also, since Nash has no face, the shape that IS Nash's mascot presence (see NashAvatar,
- * which reuses `glyphFor` and drives it by mood instead of by a fixed interval). Sharp,
- * square-cornered strokes throughout — no rounded caps/corners — to match the arcade-HUD
- * shape language, not the softer rounded style of real-or-ai-wall's panels.
+ * The three hand-cut shapes. Solid fills in `currentColor`; interior detail (paper lines,
+ * the scissor pivot) uses `--glyph-detail` so a glyph reads on any tile colour.
+ * Shared by the move tiles, the reveal, and Nash's mark.
  */
 export function glyphFor(move: Move) {
   switch (move) {
     case 'rock':
-      return <circle cx="32" cy="32" r="18" fill="none" stroke="currentColor" strokeWidth="5" />;
+      return (
+        <>
+          <path
+            d="M16 60 L24 34 L46 16 L74 22 L88 46 L78 76 L48 86 L24 78 Z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="6"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M46 16 L44 44 L24 34 M44 44 L78 76 M74 22 L58 40"
+            fill="none"
+            stroke="var(--glyph-detail, #efe9dc)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.55"
+          />
+        </>
+      );
     case 'paper':
-      return <rect x="14" y="14" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="5" />;
+      return (
+        <>
+          <path
+            d="M22 10 H60 L82 32 V90 H22 Z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="6"
+            strokeLinejoin="round"
+          />
+          <path d="M60 10 V32 H82" fill="var(--glyph-detail, #efe9dc)" opacity="0.7" />
+          <path
+            d="M34 52 H70 M34 64 H70 M34 76 H56"
+            stroke="var(--glyph-detail, #efe9dc)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            opacity="0.7"
+          />
+        </>
+      );
     case 'scissors':
       return (
         <>
-          <line x1="16" y1="16" x2="48" y2="48" stroke="currentColor" strokeWidth="5" strokeLinecap="square" />
-          <line x1="48" y1="16" x2="16" y2="48" stroke="currentColor" strokeWidth="5" strokeLinecap="square" />
+          <path
+            d="M50 54 L24 8 L34 4 L58 46 Z M50 54 L76 8 L66 4 L42 46 Z"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinejoin="round"
+          />
+          <circle cx="32" cy="76" r="13" fill="none" stroke="currentColor" strokeWidth="7" />
+          <circle cx="68" cy="76" r="13" fill="none" stroke="currentColor" strokeWidth="7" />
+          <path d="M40 66 L50 54 L60 66" fill="none" stroke="currentColor" strokeWidth="7" strokeLinejoin="round" />
+          <circle cx="50" cy="52" r="3.5" fill="var(--glyph-detail, #efe9dc)" />
         </>
       );
   }
 }
 
 interface RPSGlyphProps {
-  /** When set, shows that fixed move instead of cycling — used once the real pick is known. */
+  /** When set, shows that fixed move instead of cycling. */
   fixed?: Move;
   size?: number;
   className?: string;
@@ -51,8 +94,9 @@ export const RPSGlyph: React.FC<RPSGlyphProps> = ({ fixed, size = 48, className 
       data-move={move}
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 100 100"
       className={className}
+      aria-hidden="true"
     >
       {glyphFor(move)}
     </svg>

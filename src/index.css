@@ -1,39 +1,31 @@
 @import "tailwindcss";
-@import "@fontsource/bebas-neue/latin-400.css";
-@import "@fontsource/space-grotesk/latin-400.css";
-@import "@fontsource/space-grotesk/latin-500.css";
-@import "@fontsource/space-grotesk/latin-600.css";
-@import "@fontsource/jetbrains-mono/latin-400.css";
 @import "@fontsource/jetbrains-mono/latin-500.css";
 
+/*
+  NASH — a cut-paper arcade. Warm bone paper, black ink, and one flat colour per move:
+  rock = orange, paper = yellow, scissors = cobalt. Nash itself is always ink-black, so the
+  machine is the dark shape on the table and the human is the paper.
+*/
 @theme {
-  /* Nash's palette: near-black base, one hot red accent — deliberately more
-     aggressive/high-contrast than real-or-ai-wall's warm "lab notebook"
-     palette, matching a head-to-head "fight game" framing rather than a
-     classifier-game one. */
-  --color-ink: #120f0f;
-  --color-panel: #1d1616;
-  --color-panel-line: #3a2626;
-  --color-paper: #f3ece6;
-  --color-muted: #9c8686;
-  --color-accent: #c23b3b;
-  --color-accent-dim: #8c2929;
-  --color-good: #7f9a5e;
-  --color-good-dim: #27351e;
-  --color-bad: #c23b3b;
-  --color-bad-dim: #3a1c1c;
+  --color-bone: #efe9dc;
+  --color-bone-deep: #e2dac8;
+  --color-ink: #15120e;
+  --color-ink-soft: #2a251e;
+  --color-mute: #6d655a;
+  --color-rock: #f2603a;
+  --color-sheet: #f4d24a;
+  --color-blade: #2c3cff;
+  --color-win: #1f7a4d;
 
-  /* Arcade-cabinet type pairing, deliberately not real-or-ai-wall's Fraunces/IBM Plex
-     trio: a tall condensed display face for titles/scores (Bebas Neue reads as a cabinet
-     marquee, not a lab notebook), a clean geometric sans for body copy (Space Grotesk),
-     and a technical mono for HUD numbers/labels (JetBrains Mono). */
-  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
-  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-body: "Instrument Sans Variable", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 @layer base {
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -42,63 +34,159 @@
     touch-action: manipulation;
     overscroll-behavior: none;
     -webkit-touch-callout: none;
-    background-color: var(--color-ink);
+    background-color: var(--color-bone);
+    color: var(--color-ink);
   }
 
-  img {
-    -webkit-user-drag: none;
-    user-drag: none;
+  body {
+    font-family: var(--font-body);
   }
 
-  /* A faint, fixed CRT scanline texture over the whole kiosk — part of the arcade-cabinet
-     identity, not a generic dark-theme look. Non-interactive (pointer-events: none) so it
-     never intercepts a tap, and stripped out entirely when printing the takeaway. */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 30;
-    background-image: repeating-linear-gradient(
-      to bottom,
-      rgba(243, 236, 230, 0.05) 0px,
-      rgba(243, 236, 230, 0.05) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-    mix-blend-mode: overlay;
+  button {
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-blade);
+    outline-offset: 3px;
   }
 }
 
 @layer components {
-  /* Sharp-cornered HUD panel: a hard-edged block with a bold accent strip across the top,
-     used for the result/explainer content blocks instead of real-or-ai-wall's plain
-     rounded-free-but-soft bordered card. No border-radius anywhere in this app. */
-  .hud-panel {
-    position: relative;
-    border: 2px solid var(--color-panel-line);
-    background: var(--color-panel);
+  /* Big display type. Fraunces black, tight, with the optical "soft" wonk of the face. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 0.88;
+    font-variation-settings: "SOFT" 100, "WONK" 1;
   }
 
-  .hud-panel::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--color-accent);
+  .display-i {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+  }
+
+  /* Small label: sentence case, medium weight. Not an uppercase tracked HUD tag. */
+  .label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-mute);
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Pill buttons. Press = sink 2px, no glow, no gradient. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 3.25rem;
+    padding: 0 1.75rem;
+    border-radius: 999px;
+    border: 2.5px solid var(--color-ink);
+    background: var(--color-bone);
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 120ms;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-bone-deep);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(2px);
+  }
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn-solid {
+    background: var(--color-ink);
+    color: var(--color-bone);
+  }
+  .btn-solid:hover:not(:disabled) {
+    background: var(--color-ink-soft);
+  }
+
+  .kbd {
+    display: inline-block;
+    min-width: 1.5rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 0.4rem;
+    border: 1.5px solid currentColor;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    line-height: 1.4;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  .field {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 2.5px solid var(--color-ink);
+    padding: 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--color-ink);
+    outline: none;
+    border-radius: 0;
+  }
+  .field::placeholder {
+    color: var(--color-mute);
+    opacity: 0.55;
+  }
+  .field:focus {
+    border-bottom-color: var(--color-blade);
+  }
+
+  /* Segmented choice (radio-style) */
+  .choice {
+    border: 2.5px solid var(--color-ink);
+    border-radius: 1.25rem;
+    background: transparent;
+    padding: 0.9rem 1rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 120ms, color 120ms, transform 120ms;
+  }
+  .choice:hover {
+    background: var(--color-bone-deep);
+  }
+  .choice[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-bone);
+  }
+  .choice[aria-pressed="true"] .choice-sub {
+    color: var(--color-bone) !important;
+    opacity: 0.7;
+  }
+  .choice:active {
+    transform: translateY(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
 @media print {
-  /* The printable takeaway renders in its own light, ink-cheap layout — see
-     MatchResultScreen's .print-only block — so the CRT texture and dark theme never
-     reach the printer. */
-  body::after {
-    display: none;
-  }
-
   body {
     background: #ffffff !important;
   }
