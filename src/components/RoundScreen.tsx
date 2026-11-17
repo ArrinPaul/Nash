@@ -258,15 +258,31 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
                 </motion.button>
               ))}
             </div>
-            <button
-              type="button"
-              data-testid="camera-toggle"
-              aria-pressed={camEnabled}
-              onClick={() => setCamEnabled(!camEnabled)}
-              className="self-center text-sm font-semibold text-mute hover:text-ink underline underline-offset-4 cursor-pointer"
+            <div
+              role="group"
+              aria-label="How you play"
+              data-testid="input-mode"
+              className="self-center inline-flex items-center gap-1 rounded-full border-2 border-ink p-1 text-sm font-semibold"
             >
-              {camEnabled ? 'Hand or tiles — both work. Turn camera off' : 'Turn camera on to play with your hand'}
-            </button>
+              <span className="px-3 text-mute">Play with</span>
+              {([
+                { on: true, label: 'Hand', id: 'input-hand' },
+                { on: false, label: 'Manual', id: 'input-manual' },
+              ] as const).map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  data-testid={o.id}
+                  aria-pressed={camEnabled === o.on}
+                  onClick={() => setCamEnabled(o.on)}
+                  className={`rounded-full px-4 py-1.5 cursor-pointer transition-colors ${
+                    camEnabled === o.on ? 'bg-ink text-bone' : 'hover:bg-bone-deep'
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
           </>
         )}
       </div>

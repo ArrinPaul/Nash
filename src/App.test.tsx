@@ -234,3 +234,18 @@ describe('auto continue', () => {
     expect(store.getState().round).toBe(2);
   });
 });
+
+describe('input mode switch', () => {
+  it('lets the player leave hand mode for manual mid-game and come back', () => {
+    sessionStorage.removeItem('nash-camera-mode');
+    render(<App store={createMatchStore(() => 0)} />);
+    startMatch('fair');
+    expect(screen.getByTestId('input-hand')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('camera-panel')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('input-manual'));
+    expect(screen.getByTestId('input-manual')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByTestId('camera-panel')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('input-hand'));
+    expect(screen.getByTestId('camera-panel')).toBeInTheDocument();
+  });
+});

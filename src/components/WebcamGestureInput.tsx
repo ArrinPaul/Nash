@@ -170,10 +170,10 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, o
         <button
           type="button"
           onClick={onClose}
-          aria-label="Turn camera mode off"
+          aria-label="Switch to manual play"
           className="absolute top-2 right-2 rounded-full bg-bone text-ink text-xs font-semibold px-2.5 py-1 cursor-pointer"
         >
-          Off
+          Switch to manual
         </button>
       </div>
 
