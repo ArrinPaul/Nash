@@ -1,9 +1,13 @@
-import type { Move, RoundWinner, RoundOutcome } from '../data/types';
+import type { Move, RoundWinner, RoundOutcome, MatchLength, GameMode } from '../data/types';
 import { beats } from './ai';
 
-/** Best-of-7: first to 4 round wins takes the match; 7 played rounds is the hard cap. */
+/** Default Best-of-7: first to 4 round wins takes the match; 7 played rounds is the hard cap. */
 export const WINS_NEEDED = 4;
 export const MAX_ROUNDS = 7;
+
+export function winsNeededForLength(length: MatchLength = 7): number {
+  return Math.ceil(length / 2);
+}
 
 export function resolveRound(playerMove: Move, aiMove: Move): RoundWinner {
   if (playerMove === aiMove) return 'tie';
@@ -25,18 +29,30 @@ export function tally(outcomes: RoundOutcome[]): MatchTally {
   return { playerWins, aiWins };
 }
 
-/** True once either side has clinched best-of-7, or the round cap is reached. */
-export function isMatchOver(outcomes: RoundOutcome[]): boolean {
+/** True once either side has clinched the match, or the round cap is reached. */
+export function isMatchOver(
+  outcomes: RoundOutcome[],
+  matchLength: MatchLength = 7,
+  mode: GameMode = 'vs-ai'
+): boolean {
   const { playerWins, aiWins } = tally(outcomes);
-  return playerWins >= WINS_NEEDED || aiWins >= WINS_NEEDED || outcomes.length >= MAX_ROUNDS;
+  if (mode === 'survival') {
+    // In survival mode, game is over when player loses 3 rounds (hearts)
+    return aiWins >= 3;
+  }
+  const needed = winsNeededForLength(matchLength);
+  return playerWins >= needed || aiWins >= needed || outcomes.length >= matchLength;
 }
 
 export type MatchResult = 'player' | 'ai' | 'draw';
 
 /** Only reaches 'draw' if the round cap is hit before either side clinches 4 — possible
  * only with ties eating into the 7 rounds (e.g. 3-3 with one tie, cap reached). */
-export function matchResult(outcomes: RoundOutcome[]): MatchResult {
+export function matchResult(outcomes: RoundOutcome[], mode: GameMode = 'vs-ai'): MatchResult {
   const { playerWins, aiWins } = tally(outcomes);
+  if (mode === 'survival') {
+    return aiWins >= 3 ? 'ai' : 'player';
+  }
   if (playerWins > aiWins) return 'player';
   if (aiWins > playerWins) return 'ai';
   return 'draw';

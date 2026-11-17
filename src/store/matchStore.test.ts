@@ -139,4 +139,26 @@ describe('matchStore', () => {
     expect(state.screen).toBe('attract');
     expect(state.difficulty).toBeNull();
   });
+
+  it('supports 2-player multiplayer duel mode and tracks round outcomes', () => {
+    const store = createMatchStore();
+    store.getState().setGameMode('multiplayer');
+    store.getState().setMatchLength(3); // Best of 3 -> First to 2
+    store.getState().startMatch();
+
+    expect(store.getState().screen).toBe('multiplayer');
+    expect(store.getState().p1Score).toBe(0);
+    expect(store.getState().p2Score).toBe(0);
+
+    // Round 1: P1 Rock, P2 Scissors -> P1 wins
+    store.getState().recordMultiplayerRound('rock', 'scissors');
+    expect(store.getState().p1Score).toBe(1);
+    expect(store.getState().p2Score).toBe(0);
+    expect(store.getState().screen).toBe('multiplayer');
+
+    // Round 2: P1 Paper, P2 Rock -> P1 wins again (reaches 2 wins) -> multiplayer-result
+    store.getState().recordMultiplayerRound('paper', 'rock');
+    expect(store.getState().p1Score).toBe(2);
+    expect(store.getState().screen).toBe('multiplayer-result');
+  });
 });

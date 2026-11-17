@@ -1,4 +1,4 @@
-import type { RoundWinner, MatchDifficulty } from '../data/types';
+import type { RoundWinner, MatchDifficulty, MatchLength } from '../data/types';
 import { ADAPTIVE_FROM_ROUND, isReadingRound } from '../game/ai';
 
 /**
@@ -42,18 +42,23 @@ export function pickLine(mood: NashMood, rng: () => number = Math.random): strin
 
 /** The mood Nash should be in while a round is in progress (before the reveal) — purely a
  * function of the real round number and difficulty, same gate the AI's own pick uses. */
-export function moodForRound(round: number, difficulty: MatchDifficulty): NashMood {
-  return isReadingRound(round, difficulty) ? 'reading' : 'locking-pattern';
+export function moodForRound(round: number, difficulty: MatchDifficulty, matchLength: MatchLength = 7): NashMood {
+  return isReadingRound(round, difficulty, matchLength) ? 'reading' : 'locking-pattern';
 }
 
 /** The mood Nash should react with right after a round resolves, from Nash's own
  * perspective: "won-round" means the AI won that round, "lost-round" means the player did.
  * A tie keeps Nash in whatever reading/locking-pattern state the round was played in,
  * since nothing was actually proven either way. */
-export function moodForOutcome(winner: RoundWinner, round: number, difficulty: MatchDifficulty): NashMood {
+export function moodForOutcome(
+  winner: RoundWinner,
+  round: number,
+  difficulty: MatchDifficulty,
+  matchLength: MatchLength = 7
+): NashMood {
   if (winner === 'ai') return 'won-round';
   if (winner === 'player') return 'lost-round';
-  return moodForRound(round, difficulty);
+  return moodForRound(round, difficulty, matchLength);
 }
 
 export { ADAPTIVE_FROM_ROUND };

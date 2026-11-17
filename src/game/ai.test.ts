@@ -6,6 +6,11 @@ import {
   isReadingRound,
   predictNextMove,
   pickAIMove,
+  predictWSLS,
+  predictMarkovTransition,
+  predictCycle,
+  predictPlayerMove,
+  getPredictionProbabilities,
   ADAPTIVE_FROM_ROUND,
   COUNTER_WEIGHT,
 } from './ai';
@@ -119,5 +124,89 @@ describe('pickAIMove', () => {
     const ruthless = pickAIMove({ history, round: 2, difficulty: 'ruthless', rng: () => 0.1 });
     expect(fair.mode).toBe('random');
     expect(ruthless.mode).toBe('adaptive');
+  });
+});
+
+describe('predictWSLS & getPredictionProbabilities', () => {
+  it('computes correct move probabilities given player history', () => {
+    const history = ['rock', 'rock', 'rock', 'paper'];
+    const probs = getPredictionProbabilities(history as any);
+    expect(probs.rock).toBe(75);
+    expect(probs.paper).toBe(25);
+    expect(probs.scissors).toBe(0);
+  });
+
+  it('predicts player repeats move when player won (Win-Stay)', () => {
+    const outcomes = [
+      {
+        round: 1,
+        playerMove: 'rock',
+        aiMove: 'scissors',
+        winner: 'player',
+        aiMode: 'random',
+        predictedPlayerMove: null,
+      },
+    ] as any;
+    expect(predictWSLS(outcomes)).toBe('rock');
+  });
+
+  it('predicts player shifts to counter what beat them when player lost (Lose-Shift)', () => {
+    const outcomes = [
+      {
+        round: 1,
+        playerMove: 'scissors',
+        aiMove: 'rock',
+        winner: 'ai',
+        aiMode: 'random',
+        predictedPlayerMove: null,
+      },
+    ] as any;
+    // AI played rock and won -> player shifts to what beats rock -> paper
+    expect(predictWSLS(outcomes)).toBe('paper');
+  });
+});
+
+describe('predictCycle & predictMarkovTransition', () => {
+  it('detects clockwise rotation (rock -> paper -> scissors -> rock)', () => {
+    const history = ['rock', 'paper', 'scissors'] as const;
+    expect(predictCycle(history as any)).toBe('rock');
+  });
+
+  it('detects counter-clockwise rotation (rock -> scissors -> paper -> rock)', () => {
+    const history = ['rock', 'scissors', 'paper'] as const;
+    expect(predictCycle(history as any)).toBe('rock');
+  });
+
+  it('detects 2-move oscillation (rock -> paper -> rock)', () => {
+    const history = ['rock', 'paper', 'rock'] as const;
+    expect(predictCycle(history as any)).toBe('paper');
+  });
+
+  it('learns 1st-order Markov transitions (what moves follow the last move)', () => {
+    // Player plays rock->paper, scissors->rock, rock->paper
+    // Current last move is 'rock'. Past transition from rock was 'paper'.
+    const history = ['rock', 'paper', 'scissors', 'rock'] as const;
+    expect(predictMarkovTransition(history as any)).toBe('paper');
+  });
+
+  it('predictPlayerMove neutralizes a cycler that was previously exploiting the frequency model', () => {
+    const history = ['rock', 'paper', 'scissors'] as const;
+    const predicted = predictPlayerMove({ history: history as any });
+    expect(predicted).toBe('rock');
+  });
+});
+
+describe('psychologist archetype', () => {
+  it('still exploits a plain cycle instead of defaulting to win-stay/lose-shift', () => {
+    const history: Move[] = ['rock', 'paper', 'scissors', 'rock', 'paper', 'scissors'];
+    const outcomes = history.map((m, i) => ({
+      round: i + 1,
+      playerMove: m,
+      aiMove: 'rock' as Move,
+      winner: 'tie' as const,
+      aiMode: 'adaptive' as const,
+      predictedPlayerMove: null,
+    }));
+    expect(predictPlayerMove({ history, outcomes, archetype: 'psychologist' })).toBe('rock');
   });
 });

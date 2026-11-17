@@ -1,29 +1,40 @@
 import { create, type UseBoundStore, type StoreApi } from 'zustand';
-import type { Move, MatchDifficulty, RoundOutcome } from '../data/types';
+import type { Move, MatchDifficulty, RoundOutcome, GameMode, MatchLength, AIArchetype } from '../data/types';
 import { pickAIMove } from '../game/ai';
-import { resolveRound, isMatchOver, matchResult, bestPlayerStreak } from '../game/match';
+import { resolveRound, isMatchOver, matchResult, bestPlayerStreak, winsNeededForLength } from '../game/match';
 import { addEntry, loadLeaderboard, bestStreakToday } from '../leaderboard/leaderboard';
 
-export type Screen = 'attract' | 'setup' | 'round' | 'reveal' | 'result' | 'explainer';
+export type Screen = 'attract' | 'setup' | 'round' | 'reveal' | 'result' | 'explainer' | 'multiplayer' | 'multiplayer-result';
 
 export interface MatchState {
   screen: Screen;
   playerName: string;
+  player2Name: string;
+  mode: GameMode;
+  matchLength: MatchLength;
+  archetype: AIArchetype;
   difficulty: MatchDifficulty | null;
   round: number;
   history: Move[];
   outcomes: RoundOutcome[];
   lastOutcome: RoundOutcome | null;
+  p1Score: number;
+  p2Score: number;
   /** True only when this match's best streak just beat every streak already on today's
    * leaderboard — drives a bigger celebratory beat on the result screen than an ordinary
    * match win gets. Computed once, at the moment the match ends, from real leaderboard data. */
   isNewBestStreak: boolean;
 
   setPlayerName: (name: string) => void;
+  setPlayer2Name: (name: string) => void;
+  setGameMode: (mode: GameMode) => void;
+  setMatchLength: (length: MatchLength) => void;
+  setArchetype: (archetype: AIArchetype) => void;
   goToSetup: () => void;
   setDifficulty: (d: MatchDifficulty) => void;
   startMatch: () => void;
   submitMove: (move: Move) => void;
+  recordMultiplayerRound: (p1Move: Move, p2Move: Move) => void;
   undoRound: () => void;
   continue: () => void;
   showExplainer: () => void;
@@ -35,11 +46,17 @@ export interface MatchState {
 const INITIAL = {
   screen: 'attract' as Screen,
   playerName: '',
+  player2Name: '',
+  mode: 'vs-ai' as GameMode,
+  matchLength: 7 as MatchLength,
+  archetype: 'nash' as AIArchetype,
   difficulty: null as MatchDifficulty | null,
   round: 1,
   history: [] as Move[],
   outcomes: [] as RoundOutcome[],
   lastOutcome: null as RoundOutcome | null,
+  p1Score: 0,
+  p2Score: 0,
   isNewBestStreak: false,
 };
 
@@ -48,6 +65,10 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
     ...INITIAL,
 
     setPlayerName: (name: string) => set({ playerName: name }),
+    setPlayer2Name: (name: string) => set({ player2Name: name }),
+    setGameMode: (mode: GameMode) => set({ mode }),
+    setMatchLength: (length: MatchLength) => set({ matchLength: length }),
+    setArchetype: (archetype: AIArchetype) => set({ archetype }),
 
     goToSetup: () => set({ screen: 'setup' }),
 
@@ -55,6 +76,19 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
 
     startMatch: () => {
       const state = get();
+      if (state.mode === 'multiplayer') {
+        set({
+          screen: 'multiplayer',
+          round: 1,
+          history: [],
+          outcomes: [],
+          lastOutcome: null,
+          isNewBestStreak: false,
+          p1Score: 0,
+          p2Score: 0,
+        });
+        return;
+      }
       if (!state.difficulty) return;
       set({
         screen: 'round',
@@ -63,6 +97,8 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
         outcomes: [],
         lastOutcome: null,
         isNewBestStreak: false,
+        p1Score: 0,
+        p2Score: 0,
       });
     },
 
@@ -73,7 +109,15 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
       // guess() guard against double-click double-scoring).
       if (state.screen !== 'round' || !state.difficulty) return;
 
-      const aiPick = pickAIMove({ history: state.history, round: state.round, difficulty: state.difficulty, rng });
+      const aiPick = pickAIMove({
+        history: state.history,
+        round: state.round,
+        difficulty: state.difficulty,
+        matchLength: state.matchLength,
+        archetype: state.archetype,
+        outcomes: state.outcomes,
+        rng,
+      });
       const winner = resolveRound(move, aiPick.move);
       const outcome: RoundOutcome = {
         round: state.round,
@@ -90,6 +134,28 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
         lastOutcome: outcome,
         screen: 'reveal',
       });
+    },
+
+    recordMultiplayerRound: (p1Move: Move, p2Move: Move) => {
+      const state = get();
+      const winner = resolveRound(p1Move, p2Move);
+      const nextP1 = winner === 'player' ? state.p1Score + 1 : state.p1Score;
+      const nextP2 = winner === 'ai' ? state.p2Score + 1 : state.p2Score;
+      const needed = winsNeededForLength(state.matchLength);
+
+      if (nextP1 >= needed || nextP2 >= needed || state.round >= state.matchLength) {
+        set({
+          p1Score: nextP1,
+          p2Score: nextP2,
+          screen: 'multiplayer-result',
+        });
+      } else {
+        set({
+          p1Score: nextP1,
+          p2Score: nextP2,
+          round: state.round + 1,
+        });
+      }
     },
 
     // Discards the round just played and returns to the round screen so the player can
@@ -111,9 +177,9 @@ export function createMatchStore(rng: () => number = Math.random): UseBoundStore
       const state = get();
       if (state.screen !== 'reveal' || !state.difficulty) return;
 
-      if (isMatchOver(state.outcomes)) {
+      if (isMatchOver(state.outcomes, state.matchLength, state.mode)) {
         const streak = bestPlayerStreak(state.outcomes);
-        const result = matchResult(state.outcomes);
+        const result = matchResult(state.outcomes, state.mode);
         // Read today's best BEFORE writing this match's entry — a tie with the existing
         // best doesn't count as a new one, only strictly beating it does.
         const priorBest = bestStreakToday(loadLeaderboard());
