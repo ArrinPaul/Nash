@@ -45,3 +45,22 @@ export function preloadHandTracker(): void {
   if (ric) ric(run);
   else setTimeout(run, 1500);
 }
+
+const PREF_KEY = 'nash-camera-mode';
+
+/** Whether the player turned camera mode on; it stays on from round to round. */
+export function getCameraPreference(): boolean {
+  try {
+    return sessionStorage.getItem(PREF_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setCameraPreference(on: boolean): void {
+  try {
+    sessionStorage.setItem(PREF_KEY, on ? '1' : '0');
+  } catch {
+    // Storage can be blocked; camera mode then simply resets each round.
+  }
+}

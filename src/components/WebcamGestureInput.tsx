@@ -1,36 +1,43 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import type { Move } from '../data/types';
-import { playSelectSound } from '../audio/sound';
 import { classifyGesture, createGestureDebouncer } from '../game/gesture';
 import { getHandTracker, type HandTracker } from '../camera/handTracker';
+import { ACTIVITY_EVENT } from '../hooks/idle';
 import { MOVE_LABEL } from './moveTheme';
 
 interface WebcamGestureInputProps {
-  onGestureDetected: (move: Move) => void;
+  /** True once SHOOT is up and nothing has been thrown yet: only then does a held pose count. */
+  armed: boolean;
+  /** Called once with the gesture that was held long enough. */
+  onThrow: (move: Move) => void;
   onClose: () => void;
+  /** Manual fallback, only offered when tracking is unavailable. */
+  onManualPick?: (move: Move) => void;
 }
 
 type Tracking = 'permission' | 'loading' | 'tracking' | 'manual';
 
-const COUNT_STEP_MS = 550;
+/** How long a pose must be held, after it is first recognised, before it is thrown. */
+export const HOLD_MS = 450;
 
-export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ onGestureDetected, onClose }) => {
+/**
+ * Camera mode: a small live panel in the corner. The hand is read continuously; once SHOOT
+ * is up and the same pose has been held for HOLD_MS it is thrown automatically. No button.
+ */
+export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ armed, onThrow, onClose, onManualPick }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  /** The move that will be thrown on SHOOT: the held gesture, or a manual pick. */
-  const chosenRef = useRef<Move>('rock');
-  const lastStableRef = useRef<Move | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const armedRef = useRef(armed);
+  const onThrowRef = useRef(onThrow);
   const [tracking, setTracking] = useState<Tracking>('permission');
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [live, setLive] = useState<Move | null>(null);
-  const [chosen, setChosen] = useState<Move>('rock');
+  const [lockPct, setLockPct] = useState(0);
 
-  const choose = useCallback((move: Move) => {
-    chosenRef.current = move;
-    setChosen(move);
-  }, []);
+  useEffect(() => {
+    armedRef.current = armed;
+    onThrowRef.current = onThrow;
+  }, [armed, onThrow]);
 
-  // Camera + on-device hand tracking. Everything is local: the model and wasm ship in /public.
   useEffect(() => {
     let cancelled = false;
     let stream: MediaStream | null = null;
@@ -68,19 +75,41 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ onGestur
         if (cancelled) return;
         setTracking('tracking');
 
-        const debouncer = createGestureDebouncer(6);
+        const debouncer = createGestureDebouncer(5);
         let lastTime = -1;
+        let held: Move | null = null;
+        let heldSince = 0;
+        let fired = false;
+        let lastPct = 0;
+
         const loop = () => {
           const video = videoRef.current;
           if (tracker && video && video.readyState >= 2 && video.currentTime !== lastTime) {
             lastTime = video.currentTime;
             const hand = tracker.detectForVideo(video, performance.now()).landmarks[0];
             const stable = debouncer.push(hand ? classifyGesture(hand) : null);
-            // Only react when the held pose changes, so a manual tap sticks until you change pose.
-            if (stable !== lastStableRef.current) {
-              lastStableRef.current = stable;
+
+            if (stable !== held) {
+              held = stable;
+              heldSince = performance.now();
               setLive(stable);
-              if (stable) choose(stable);
+              // A visible hand means someone is playing: keep the kiosk from idling out.
+              if (stable) window.dispatchEvent(new Event(ACTIVITY_EVENT));
+            }
+
+            // Auto-capture: armed + same pose held long enough => throw it, exactly once.
+            let pct = 0;
+            if (held && armedRef.current && !fired) {
+              pct = Math.min(1, (performance.now() - heldSince) / HOLD_MS);
+              if (pct >= 1) {
+                fired = true;
+                onThrowRef.current(held);
+              }
+            }
+            const rounded = Math.round(pct * 20) / 20;
+            if (rounded !== lastPct) {
+              lastPct = rounded;
+              setLockPct(rounded);
             }
           }
           raf = requestAnimationFrame(loop);
@@ -98,89 +127,72 @@ export const WebcamGestureInput: React.FC<WebcamGestureInputProps> = ({ onGestur
       cancelAnimationFrame(raf);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [choose]);
-
-  const shoot = useCallback(() => {
-    if (countdown !== null) return;
-    setCountdown(3);
-    playSelectSound();
-    let count = 3;
-    const interval = setInterval(() => {
-      count--;
-      if (count > 0) {
-        setCountdown(count);
-        playSelectSound();
-      } else {
-        clearInterval(interval);
-        setCountdown(null);
-        // Read at the moment of SHOOT: whatever pose is held now wins.
-        onGestureDetected(chosenRef.current);
-      }
-    }, COUNT_STEP_MS);
-  }, [countdown, onGestureDetected]);
+  }, []);
 
   const status =
     tracking === 'permission'
-      ? 'Waiting for camera permission…'
+      ? 'Allow the camera to start'
       : tracking === 'loading'
         ? 'Loading hand tracking…'
-      : tracking === 'tracking'
-        ? live
-          ? `I see ${MOVE_LABEL[live].toLowerCase()}`
-          : 'Show a rock, paper or scissors hand'
-        : 'Tracking off — pick your move below';
+        : tracking === 'manual'
+          ? 'Tracking is off'
+          : !armed
+            ? live
+              ? `${MOVE_LABEL[live]} — wait for Shoot!`
+              : 'Get your hand ready'
+            : live
+              ? `Locking ${MOVE_LABEL[live].toLowerCase()}…`
+              : 'Show your hand now';
 
   return (
-    <div className="fixed inset-0 z-50 bg-ink/70 flex items-center justify-center p-4" role="dialog" aria-label="Camera">
-      <div className="bg-bone rounded-[2rem] max-w-md w-full p-6 flex flex-col items-center gap-4 relative">
-        <button type="button" onClick={onClose} aria-label="Close camera" className="absolute top-4 right-4 btn !min-h-10 !px-4">
-          Close
-        </button>
-
-        <h3 className="display text-4xl self-start">Camera</h3>
-
+    <aside
+      className="fixed z-40 bottom-4 right-4 w-56 sm:w-64 rounded-[1.5rem] bg-ink text-bone p-2 shadow-[0_10px_30px_rgba(21,18,14,0.35)]"
+      aria-label="Camera mode"
+      data-testid="camera-panel"
+    >
+      <div className="relative aspect-[4/3] rounded-[1.1rem] overflow-hidden bg-black">
         {cameraError ? (
-          <div className="w-full rounded-2xl bg-sheet p-4 text-base">
-            {cameraError} Use the move tiles or the R / P / S keys instead.
-          </div>
+          <p className="absolute inset-0 grid place-items-center p-3 text-center text-sm">{cameraError}</p>
         ) : (
-          <div className="relative w-full aspect-[4/3] bg-ink rounded-2xl overflow-hidden grid place-items-center">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover -scale-x-100" />
-            <div className="absolute inset-0 grid place-items-center pointer-events-none">
-              {countdown !== null && <div className="display text-9xl text-bone drop-shadow">{countdown}</div>}
-            </div>
-            <span
-              data-testid="gesture-status"
-              className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-sm font-semibold ${
-                live ? 'bg-sheet text-ink' : 'bg-bone text-ink'
-              }`}
-            >
-              {status}
-            </span>
+          <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover -scale-x-100" />
+        )}
+        {armed && tracking === 'tracking' && (
+          <div className="absolute inset-x-0 bottom-0 h-1.5 bg-bone/20" aria-hidden="true">
+            <div className="h-full bg-sheet" style={{ width: `${lockPct * 100}%` }} />
           </div>
         )}
-
-        <div className="w-full">
-          <div className="label mb-2">{tracking === 'tracking' ? 'Detected move (tap to override)' : 'Your move'}</div>
-          <div className="grid grid-cols-3 gap-2" role="group" aria-label="Your move">
-            {(['rock', 'paper', 'scissors'] as Move[]).map((move) => (
-              <button
-                key={move}
-                type="button"
-                className="choice !py-2 text-center font-semibold"
-                aria-pressed={chosen === move}
-                onClick={() => choose(move)}
-              >
-                {MOVE_LABEL[move]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button type="button" disabled={countdown !== null} onClick={shoot} className="btn btn-solid w-full">
-          {countdown !== null ? `Shooting in ${countdown}…` : 'Shoot on 3-2-1'}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Turn camera mode off"
+          className="absolute top-2 right-2 rounded-full bg-bone text-ink text-xs font-semibold px-2.5 py-1 cursor-pointer"
+        >
+          Off
         </button>
       </div>
-    </div>
+
+      <p
+        data-testid="gesture-status"
+        aria-live="polite"
+        className={`mt-2 mb-1 px-2 text-sm font-semibold ${armed && live ? 'text-sheet' : ''}`}
+      >
+        {status}
+      </p>
+
+      {tracking === 'manual' && onManualPick && (
+        <div className="grid grid-cols-3 gap-1.5 px-1 pb-1">
+          {(['rock', 'paper', 'scissors'] as Move[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => onManualPick(m)}
+              className="rounded-xl border-2 border-bone/40 py-1.5 text-xs font-semibold cursor-pointer"
+            >
+              {MOVE_LABEL[m]}
+            </button>
+          ))}
+        </div>
+      )}
+    </aside>
   );
 };

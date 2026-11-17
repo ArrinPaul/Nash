@@ -12,7 +12,7 @@ import { currentPlayerStreak, tally, winsNeededForLength } from '../game/match';
 import { randomMove } from '../game/ai';
 import { MindReaderGauge } from './MindReaderGauge';
 import { WebcamGestureInput } from './WebcamGestureInput';
-import { preloadHandTracker } from '../camera/handTracker';
+import { preloadHandTracker, getCameraPreference, setCameraPreference } from '../camera/handTracker';
 import { playRockSound, playPaperSound, playScissorsSound, playNashVoice, playSelectSound } from '../audio/sound';
 
 interface RoundScreenProps {
@@ -45,7 +45,11 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
   archetype = 'nash',
 }) => {
   const [thinking, setThinking] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
+  const [showCamera, setShowCameraState] = useState(getCameraPreference);
+  const setShowCamera = (on: boolean) => {
+    setCameraPreference(on);
+    setShowCameraState(on);
+  };
   const [picked, setPicked] = useState<Move | null>(null);
   const [beat, setBeat] = useState(0); // 0..3 = counting in, 4 = shoot window open
   const [tooSlow, setTooSlow] = useState(false);
@@ -93,16 +97,16 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
 
   // Shot clock: once SHOOT is up, a pick must land in time or a random move is thrown for you.
   useEffect(() => {
-    if (thinking || showCamera || beat < BEATS.length) return;
+    if (thinking || beat < BEATS.length) return;
     const id = setTimeout(() => handlePick(randomMove(), true), SHOT_CLOCK_MS);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beat, thinking, showCamera]);
+  }, [beat, thinking]);
 
   // Keyboard: R/1, P/2, S/3
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (thinking || showCamera) return;
+      if (thinking) return;
       const key = e.key.toLowerCase();
       if (key === 'r' || key === '1') handlePick('rock');
       else if (key === 'p' || key === '2') handlePick('paper');
@@ -111,7 +115,7 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [thinking, showCamera]);
+  }, [thinking]);
 
   const { playerWins, aiWins } = tally(outcomes);
   const mood = moodForRound(round, difficulty, matchLength);
@@ -179,7 +183,7 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
           ))}
         </div>
         <div className="h-1.5 w-full max-w-md rounded-full bg-ink/10 overflow-hidden" aria-hidden="true">
-          {shooting && !thinking && !showCamera && (
+          {shooting && !thinking && (
             <motion.div
               key={`clock-${round}`}
               initial={{ width: '100%' }}
@@ -242,10 +246,12 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
             </div>
             <button
               type="button"
-              onClick={() => setShowCamera(true)}
+              data-testid="camera-toggle"
+              aria-pressed={showCamera}
+              onClick={() => setShowCamera(!showCamera)}
               className="self-center text-sm font-semibold text-mute hover:text-ink underline underline-offset-4 cursor-pointer"
             >
-              Use the camera instead
+              {showCamera ? 'Camera mode on — show your hand on Shoot!' : 'Play with your hand (camera)'}
             </button>
           </>
         )}
@@ -253,10 +259,9 @@ export const RoundScreen: React.FC<RoundScreenProps> = ({
 
       {showCamera && (
         <WebcamGestureInput
-          onGestureDetected={(move) => {
-            setShowCamera(false);
-            handlePick(move);
-          }}
+          armed={shooting && !thinking}
+          onThrow={(move) => handlePick(move)}
+          onManualPick={(move) => handlePick(move)}
           onClose={() => setShowCamera(false)}
         />
       )}
