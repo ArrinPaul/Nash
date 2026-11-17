@@ -190,3 +190,20 @@ describe('setup wizard', () => {
     expect(screen.getByTestId('begin-match')).toBeEnabled();
   });
 });
+
+describe('hands-free activity', () => {
+  it('counts a camera activity event as interaction so the kiosk does not idle out', () => {
+    render(<App store={createMatchStore(() => 0)} />);
+    startMatch('fair');
+    act(() => {
+      vi.advanceTimersByTime(40000);
+    });
+    act(() => {
+      window.dispatchEvent(new Event('nash-activity'));
+    });
+    act(() => {
+      vi.advanceTimersByTime(40000);
+    });
+    expect(screen.queryByTestId('attract-root')).not.toBeInTheDocument();
+  });
+});
